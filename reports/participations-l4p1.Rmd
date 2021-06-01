@@ -1,0 +1,173 @@
+---
+title: "REPLACE ME"
+output:
+    html_document:
+    df_print: paged
+theme: sandstone
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(openintro)
+library(tidyverse)
+library(tidymodels)
+library(viridis)
+library(ggbeeswarm)
+library(here)
+source(here::here("code/import_data.R"))
+theme_set(theme_bw())
+
+knitr::opts_chunk$set(tidy = FALSE,
+                      fig.width = 6,
+                      fig.height = 5)
+```
+
+```{r read}
+dados = read_csv(
+    here::here("data/participation-per-country.csv"),
+    col_types = cols(
+        .default = col_double(),
+        site = col_character(),
+        country = col_character(),
+        geo = col_character(),
+        four_regions = col_character(),
+        eight_regions = col_character(),
+        six_regions = col_character(),
+        `World bank income group 2017` = col_character()
+    )
+) %>% janitor::clean_names() %>% drop_na() %>% 
+    filter(usuarios > 200)
+glimpse(dados)
+```
+```{r}
+dados_sof = dados %>% filter(site == "StackOverflow")
+dados_su = dados %>% filter(site == "SuperUser")
+```
+
+
+```{r}
+dados_sof %>%
+    ggplot(aes(x = epi)) +
+    geom_histogram(binwidth = 4)
+
+dados_su %>%
+    ggplot(aes(x = epi)) +
+    geom_histogram(binwidth = 4)
+
+dados_sof %>%
+    ggplot(aes(x = responderam_prop)) +
+    geom_histogram(binwidth = 0.025)
+
+dados_su %>%
+    ggplot(aes(x = responderam_prop)) +
+    geom_histogram(binwidth = 0.025)
+```
+
+```{r}
+    ggplot(dados_sof, aes(x = "", y = responderam_prop)) +
+    geom_quasirandom(size = .8, width = .2) +
+    geom_point(aes(y = mean(responderam_prop, na.rm = TRUE)), color = "red", size = 3)
+
+    ggplot(dados_su, aes(x = "", y = responderam_prop)) +
+    geom_quasirandom(size = .8, width = .2) +
+    geom_point(aes(y = mean(responderam_prop, na.rm = TRUE)), color = "red", size = 3)
+```
+
+
+
+```{r}
+dados_sof %>% 
+    ggplot(aes(x = epi, y = responderam_prop)) + 
+    geom_point(alpha = 0.4) +
+    geom_smooth(method = "lm", se = FALSE, color = "red")
+
+dados_su %>% 
+    ggplot(aes(x = epi, y = responderam_prop)) + 
+    geom_point(alpha = 0.4) +
+    geom_smooth(method = "lm", se = FALSE, color = "red")
+```
+
+```{r}
+dados %>% 
+    ggplot(aes(x = epi, y = responderam_prop, color = site)) + 
+    geom_point()
+```
+
+
+```{r}
+mod_sof <- lm(epi ~ responderam_prop, data = dados_sof)
+tidy(mod_sof)
+glance(mod_sof)
+
+mod_su <- lm(epi ~ responderam_prop, data = dados_su)
+tidy(mod_su)
+glance(mod_su)
+```
+
+```{r}
+dados_sof %>%
+    ggplot(aes(x = epi, y = responderam_prop)) +
+    geom_point(alpha = 0.4) +
+    geom_smooth(method = "lm", se = FALSE)
+
+dados_su %>%
+    ggplot(aes(x = epi, y = responderam_prop)) +
+    geom_point(alpha = 0.4) +
+    geom_smooth(method = "lm", se = FALSE)
+```
+
+*** REMOVENDO VALORES DISCREPANTES ***
+
+```{r}
+# dados_sof = dados_sof %>% filter(responderam_prop > 0.4)
+# 
+# dados_sof %>%
+#     ggplot(aes(x = epi, y = responderam_prop)) +
+#     geom_point(alpha = 0.4) +
+#     geom_smooth(method = "lm", se = FALSE)
+# 
+# dados_su %>%
+#     ggplot(aes(x = epi, y = responderam_prop)) +
+#     geom_point(alpha = 0.4) +
+#     geom_smooth(method = "lm", se = FALSE)
+```
+
+
+```{r}
+mod_sof %>%
+    augment(dados_sof)
+
+mod_su %>%
+    augment(dados_su)
+```
+
+```{r}
+mod_sof %>%
+    augment(dados_sof) %>%
+    ggplot(mapping = aes(x = responderam_prop)) +
+    geom_point(aes(y = epi), alpha = .4, size = 1) +
+    geom_line(aes(y = .fitted), color = "red")
+
+mod_su %>%
+    augment(dados_su) %>%
+    ggplot(mapping = aes(x = responderam_prop)) +
+    geom_point(aes(y = epi), alpha = .4, size = 1) +
+    geom_line(aes(y = .fitted), color = "red")
+```
+
+
+```{r}
+mod_sof %>%
+    tidy(conf.int = T, conf.level = .95) %>%
+    select(-p.value)
+
+mod_su %>%
+    tidy(conf.int = T, conf.level = .95) %>%
+    select(-p.value)
+```
+
+
+Exemplo de Relato:
+Mostrar tabela formatada
+Mostrar R2
+
+Regressão linear simples foi utilizada para analisar a associação entre VarIndep1 e VarResposta. Um modelo no formato VarDep = XXX.VarIndep1 + YYY explica XX,XX% da variância de resposta (R2 = XX,XX). O aumento de 1 unidade de VarIndep1 medida como/em [unidade] produz uma mudança em VarDep. Portanto,...
